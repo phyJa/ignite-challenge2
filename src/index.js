@@ -30,7 +30,35 @@ function checksCreateTodosUserAvailability(request, response, next) {
 }
 
 function checksTodoExists(request, response, next) {
-
+  const { username } = request.headers;
+  const todoId = request.params.id;
+  // User and id validations
+  const chosenUser = users.find(
+    (aUser) => aUser.username === username
+  );
+  let todoIdIsFromATodoOfTheUser;
+  if(!chosenUser)
+    return response.status(404).json({ error: "User not found... Please verify your request data"});
+  else if(!validate(todoId))
+    return response.status(400).json({ error: "This uuid does not exist..."});
+  else {
+    let theTodoToBePassed;
+    todoIdIsFromATodoOfTheUser = chosenUser.todos.some(
+      (aTodo) => {
+        if(aTodo.id === todoId) {
+          theTodoToBePassed = aTodo;
+          return true;
+        }
+      }
+    );
+    if(!todoIdIsFromATodoOfTheUser)
+      return response.status(404).json({ error: "The user has not this uuid..."});
+    else {
+      request.user = chosenUser;
+      request.todo = theTodoToBePassed;
+      return next();
+    }
+  }
 }
 
 function findUserById(request, response, next) {
